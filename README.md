@@ -62,18 +62,26 @@ mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
-device_type: JPLS_8H
+device_type: JPLS-8H
 device_id: "DEINE_DEVICE_ID"
 broker_id: hame-2025
+cloud_broker_url: "mqtts://<DISCOVER_BROKER>:8883"
+cloud_username: "deine-email@example.com"
+cloud_password: "DEIN_PASSWORT"
 polling_interval: 60
 response_timeout: 30
 enable_cell_data: true
 log_level: info
 use_cloud_bridge: true
-cloud_username: "deine-email@example.com"
-cloud_password: "DEIN_PASSWORT"
 health_port: 8099
 ```
+
+**Hinweis: Cloud Broker URL ermitteln**
+Die Hame Cloud MQTT Broker URL ist nicht öffentlich dokumentiert und variiert je nach Region/Gerätegeneration (hame-2024 vs hame-2025). Um die korrekte URL zu erhalten:
+1. Installiere das offizielle [tomquist/hame-relay](https://github.com/tomquist/hame-relay) Add-on in Home Assistant
+2. Starte es mit deinen Hame Cloud Zugangsdaten
+3. Prüfe die Logs — dort wird die tatsächliche Broker URL angezeigt (z. B. `mqtts://...:8883`)
+4. Trage diese URL in `cloud_broker_url` ein
 
 ### Optionen
 
@@ -86,6 +94,7 @@ health_port: 8099
 | `device_type` | Gerätetyp: `JPLS_8H`, `HMM-1`, `HMN-1` | `HMM-1` |
 | `device_id` | Geräte-ID (12-stellige MAC/Hex) | — |
 | `broker_id` | Broker-Generation: `hame-2024` oder `hame-2025` | `hame-2025` |
+| `cloud_broker_url` | Cloud MQTT Broker URL (nur bei `use_cloud_bridge: true`) | — |
 | `polling_interval` | Abfrageintervall (Sekunden, 10–3600) | `60` |
 | `response_timeout` | MQTT-Antwort-Timeout (Sekunden, 5–300) | `30` |
 | `enable_cell_data` | Zell-Level Sensoren aktivieren | `true` |
