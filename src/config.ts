@@ -9,9 +9,9 @@ import path from 'path';
 // Load .env if present (for local development)
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
-export interface DeviceConfig {
-  type: string;
-  id: string;
+export interface HameCredentials {
+  username: string;
+  password: string;
 }
 
 export interface AppConfig {
@@ -21,10 +21,14 @@ export interface AppConfig {
   mqttTopicPrefix: string;
   deviceType: string;
   deviceId: string;
+  brokerId: string;
   pollingInterval: number;
   responseTimeout: number;
   pollCellData: boolean;
   logLevel: string;
+  useCloudBridge: boolean;
+  cloudCredentials?: HameCredentials;
+  healthPort: number;
 }
 
 function getEnv(key: string, defaultValue?: string): string {
@@ -48,6 +52,15 @@ function getEnvBool(key: string, defaultValue: boolean): boolean {
 }
 
 export function loadConfig(): AppConfig {
+  const useCloudBridge = getEnvBool('USE_CLOUD_BRIDGE', false);
+  const cloudUsername = process.env['CLOUD_USERNAME'];
+  const cloudPassword = process.env['CLOUD_PASSWORD'];
+
+  let cloudCredentials: HameCredentials | undefined;
+  if (useCloudBridge && cloudUsername && cloudPassword) {
+    cloudCredentials = { username: cloudUsername, password: cloudPassword };
+  }
+
   return {
     mqttBrokerUrl: getEnv('MQTT_BROKER_URL', 'mqtt://localhost:1883'),
     mqttUsername: process.env['MQTT_USERNAME'] || undefined,
@@ -55,9 +68,13 @@ export function loadConfig(): AppConfig {
     mqttTopicPrefix: getEnv('MQTT_TOPIC_PREFIX', 'marstek_jupiter'),
     deviceType: getEnv('DEVICE_TYPE', ''),
     deviceId: getEnv('DEVICE_ID', ''),
+    brokerId: getEnv('BROKER_ID', 'hame-2025'),
     pollingInterval: getEnvNumber('MQTT_POLLING_INTERVAL', 60),
     responseTimeout: getEnvNumber('MQTT_RESPONSE_TIMEOUT', 30),
     pollCellData: getEnvBool('POLL_CELL_DATA', false),
     logLevel: getEnv('LOG_LEVEL', 'info'),
+    useCloudBridge,
+    cloudCredentials,
+    healthPort: getEnvNumber('HEALTH_PORT', 8099),
   };
 }

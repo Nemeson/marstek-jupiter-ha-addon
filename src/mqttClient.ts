@@ -1,18 +1,15 @@
-/"""
- * MQTT Client with Home Assistant Discovery
- * Handles connection, polling, and entity publishing
-"""
-
 import mqtt from 'mqtt';
 import { AppConfig } from './config';
 import { Commands } from './commands';
 import { parsePayload, getNumber, getBoolean } from './parser';
 import { Logger } from 'pino';
+import { buildDeviceTopic, buildControlTopic } from './encryption';
 
 export interface MqttClient {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   publishDiscovery(): Promise<void>;
+  startPolling(): void;
 }
 
 interface DeviceState {
@@ -35,20 +32,20 @@ interface DeviceState {
 }
 
 export function createMqttClient(config: AppConfig, logger: Logger): MqttClient {
-  const { deviceType, deviceId, mqttTopicPrefix } = config;
+  const { deviceType, deviceId, mqttTopicPrefix, brokerId, pollingInterval, pollCellData } = config;
   const baseTopic = `${mqttTopicPrefix}/${deviceType}/device/${deviceId}`;
   const availabilityTopic = `${mqttTopicPrefix}/${deviceType}/availability/${deviceId}`;
   const controlTopic = `${mqttTopicPrefix}/${deviceType}/control/${deviceId}`;
 
+  // Use encryption module to build real device/control topics
+  const { oldTopic, newTopic } = buildDeviceTopic(brokerId, deviceType, deviceId);
+  const { oldControlTopic, newControlTopic } = buildControlTopic(brokerId, deviceType, deviceId);
+
+  logger.debug({ oldTopic, newTopic, oldControlTopic, newControlTopic }, 'Topics resolved');
+
   let client: mqtt.MqttClient | null = null;
   let state: DeviceState = { online: false };
   let pollingTimer: ReturnType<typeof setInterval> | null = null;
-
-  // Device topics (legacy/cloud)
-  const deviceDataTopic = `hame_energy/${deviceType}/device/${deviceId}/ctrl`;
-  const deviceDataNewTopic = `marstek_energy/${deviceType}/device/${deviceId}/ctrl`;
-  const deviceControlTopic = `hame_energy/${deviceType}/App/${deviceId}/ctrl`;
-  const deviceControlNewTopic = `marstek_energy/${deviceType}/App/${deviceId}/ctrl`;
 
   function updateStateFromPayload(payload: ReturnType<typeof parsePayload>) {
     state.soc = getNumber(payload, 'cel_c', state.soc);
@@ -97,13 +94,13 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
   async function sendCommand(payload: string) {
     if (!client || !client.connected) return;
     logger.debug({ payload }, 'Sending command');
-    await client.publishAsync(deviceControlTopic, payload, { qos: 1 });
-    await client.publishAsync(deviceControlNewTopic, payload, { qos: 1 });
+    await client.publishAsync(oldControlTopic, payload, { qos: 1 });
+    await client.publishAsync(newControlTopic, payload, { qos: 1 });
   }
 
   async function poll() {
     await sendCommand(Commands.refresh());
-    if (config.pollCellData) {
+    if (pollCellData) {
       await sendCommand(Commands.getBmsInfo());
     }
   }
@@ -175,6 +172,22 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
       value_template: `{{ value_json.value }}`,
     }), { retain: true });
 
+    // Number for depth of discharge (DOD) 30-88%
+    const numberDiscoveryTopic = `homeassistant/number/${deviceType}_${deviceId}/depth_of_discharge/config`;
+    await client!.publishAsync(numberDiscoveryTopic, JSON.stringify({
+      name: 'Depth of Discharge',
+      state_topic: `${baseTopic}/depthOfDischarge`,
+      command_topic: `${controlTopic}/depth-of-discharge`,
+      availability_topic: availabilityTopic,
+      unique_id: `${deviceType}_${deviceId}_depth_of_discharge_number`,
+      device: deviceInfo,
+      min: 30,
+      max: 88,
+      step: 1,
+      unit_of_measurement: '%',
+      value_template: `{{ value_json.value }}`,
+    }), { retain: true });
+
     logger.info('HA Discovery published for all entities');
   }
 
@@ -195,7 +208,7 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
 
         client.on('connect', () => {
           logger.info('MQTT connected');
-          client!.subscribe([deviceDataTopic, deviceDataNewTopic, `${controlTopic}/#`], (err) => {
+          client!.subscribe([oldTopic, newTopic, `${controlTopic}/#`], (err) => {
             if (err) {
               logger.error({ err }, 'Subscription failed');
               reject(err);
@@ -210,7 +223,7 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
           const msg = message.toString();
           logger.debug({ topic, msg }, 'Message received');
 
-          if (topic === deviceDataTopic || topic === deviceDataNewTopic) {
+          if (topic === oldTopic || topic === newTopic) {
             const payload = parsePayload(msg);
             updateStateFromPayload(payload);
             await publishAllSensors();
@@ -218,11 +231,15 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
           } else if (topic.startsWith(controlTopic)) {
             const command = topic.substring(controlTopic.length + 1);
             if (command === 'working-mode') {
-              const mode = msg === 'automatic' ? 1 : 2;
               await sendCommand(Commands.setWorkingMode(msg as 'automatic' | 'manual'));
             } else if (command === 'surplus-feed-in') {
               const enabled = msg === 'ON';
               await sendCommand(Commands.setSurplusFeedIn(enabled));
+            } else if (command === 'depth-of-discharge') {
+              const depth = parseInt(msg, 10);
+              if (!isNaN(depth)) {
+                await sendCommand(Commands.setDischargeDepth(depth));
+              }
             }
           }
         });
@@ -248,6 +265,17 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
 
     async publishDiscovery() {
       return publishDiscovery();
+    },
+
+    startPolling() {
+      if (pollingTimer) clearInterval(pollingTimer);
+      // Immediate first poll
+      poll().catch((err) => logger.error({ err }, 'Initial poll error'));
+      // Periodic polls
+      pollingTimer = setInterval(() => {
+        poll().catch((err) => logger.error({ err }, 'Poll error'));
+      }, pollingInterval * 1000);
+      logger.info({ interval: pollingInterval }, 'Polling loop started');
     },
   };
 }

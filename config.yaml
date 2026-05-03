@@ -22,11 +22,16 @@ options:
   mqtt_password: ""
   topic_prefix: "marstek_jupiter"
   device_type: "HMM-1"
-  device_id: ""
+  device_id: "YOUR_MAC_ADDRESS_HEX"
+  broker_id: "hame-2025"
+  cloud_username: ""
+  cloud_password: ""
+  use_cloud_bridge: false
   polling_interval: 60
   response_timeout: 30
   enable_cell_data: true
   log_level: info
+  health_port: 8099
 schema:
   mqtt_broker_url: str
   mqtt_username: str?
@@ -34,10 +39,15 @@ schema:
   topic_prefix: str
   device_type: list(HMM-1|HMN-1|JPLS-1)
   device_id: str
+  broker_id: list(hame-2024|hame-2025)
+  cloud_username: str?
+  cloud_password: str?
+  use_cloud_bridge: bool
   polling_interval: int(10,3600)
   response_timeout: int(5,300)
   enable_cell_data: bool
-  log_level: list(debug|info|warning|error)
+  log_level: list(trace|debug|info|warning|error)
+  health_port: port
 map:
   - addon_config:rw
 image: "ghcr.io/your-username/marstek-jupiter-ha-{arch}"
