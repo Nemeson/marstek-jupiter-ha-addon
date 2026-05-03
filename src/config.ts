@@ -67,7 +67,7 @@ export function loadConfig(): AppConfig {
     mqttUsername: process.env['MQTT_USERNAME'] || undefined,
     mqttPassword: process.env['MQTT_PASSWORD'] || undefined,
     mqttTopicPrefix: getEnv('MQTT_TOPIC_PREFIX', 'marstek_jupiter'),
-    deviceType: getEnv('DEVICE_TYPE', ''),
+    deviceType: getEnv('DEVICE_TYPE', 'JPLS-8H'),
     deviceId: getEnv('DEVICE_ID', ''),
     brokerId: getEnv('BROKER_ID', 'hame-2025'),
     pollingInterval: getEnvNumber('MQTT_POLLING_INTERVAL', 60),

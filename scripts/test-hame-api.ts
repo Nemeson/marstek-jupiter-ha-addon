@@ -40,6 +40,8 @@ async function main() {
       console.error('Login failed');
       process.exit(1);
     }
+
+    const devices = await client.getDevices();
     console.log(`Login success! Found ${devices.length} device(s).`);
     console.log('Devices:');
     for (const d of devices) {
