@@ -1,0 +1,43 @@
+name: "Marstek Jupiter C+"
+version: "1.0.0"
+slug: marstek_jupiter_c_plus
+description: "Home Assistant Add-on für Marstek Jupiter C+ Energiespeicher"
+arch:
+  - armv7
+  - aarch64
+  - amd64
+url: "https://github.com/your-username/marstek-jupiter-ha"
+apptitle: "Marstek Jupiter C+ Integration"
+init: false
+startup: application
+boot: auto
+services:
+  - mqtt:need
+ports:
+  8099/tcp: 8099
+watchdog: "http://[HOST]:8099/health"
+options:
+  mqtt_broker_url: "mqtt://core-mosquitto:1883"
+  mqtt_username: ""
+  mqtt_password: ""
+  topic_prefix: "marstek_jupiter"
+  device_type: "HMM-1"
+  device_id: ""
+  polling_interval: 60
+  response_timeout: 30
+  enable_cell_data: true
+  log_level: info
+schema:
+  mqtt_broker_url: str
+  mqtt_username: str?
+  mqtt_password: str?
+  topic_prefix: str
+  device_type: list(HMM-1|HMN-1|JPLS-1)
+  device_id: str
+  polling_interval: int(10,3600)
+  response_timeout: int(5,300)
+  enable_cell_data: bool
+  log_level: list(debug|info|warning|error)
+map:
+  - addon_config:rw
+image: "ghcr.io/your-username/marstek-jupiter-ha-{arch}"
