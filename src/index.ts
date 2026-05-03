@@ -8,7 +8,7 @@ import pino from 'pino';
 import { loadConfig } from './config';
 import { createMqttClient, MqttClient } from './mqttClient';
 import { createHealthServer } from './health';
-import { HameApiClient } from './hameApi';
+import { CloudBridge } from './cloudBridge';
 
 const logger = pino({
   level: process.env['LOG_LEVEL'] || 'info',
@@ -43,24 +43,22 @@ async function main() {
     () => mqttConnected
   );
 
-  // Optional: Cloud login and device validation
-  let hameClient: HameApiClient | undefined;
+  // Optional: Cloud-MQTT Bridge
+  let cloudBridge: CloudBridge | undefined;
   if (config.useCloudBridge && config.cloudCredentials) {
-    hameClient = new HameApiClient(logger);
-    const loggedIn = await hameClient.login(config.cloudCredentials);
-    if (loggedIn) {
-      const device = await hameClient.findDevice(config.deviceId);
-      if (device) {
-        logger.info({ 
-          deviceId: device.deviceId, 
-          product: device.productName,
-          online: device.online 
-        }, 'Cloud device found');
-      } else {
-        logger.warn('Device not found in cloud account');
-      }
-    } else {
-      logger.warn('Cloud login failed - continuing without cloud bridge');
+    cloudBridge = new CloudBridge({
+      deviceType: config.deviceType,
+      deviceId: config.deviceId,
+      brokerId: config.brokerId,
+      localBrokerUrl: config.mqttBrokerUrl,
+      cloudBrokerUrl: config.cloudBrokerUrl,
+      cloudCredentials: config.cloudCredentials,
+      logger,
+    });
+    const bridgeStarted = await cloudBridge.start();
+    if (!bridgeStarted) {
+      logger.warn('Cloud bridge failed to start — continuing without cloud bridge');
+      cloudBridge = undefined;
     }
   }
 
