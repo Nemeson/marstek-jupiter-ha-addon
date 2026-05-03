@@ -64,7 +64,7 @@ export class CloudBridge {
     // Validate cloud broker URL
     if (!this.cloudBrokerUrl) {
       this.logger.error(
-        'Cloud bridge failed: cloudBrokerUrl is not configured. Set it in the add-on options or via CLOUD_BROKER_URL env var.'
+        'Cloud bridge failed: cloudBrokerUrl is not configured. It should be auto-discovered from hame-relay certs at startup. If this error persists, check that the hame-relay Docker certs are properly copied or set cloud_broker_url explicitly in config.'
       );
       return false;
     }

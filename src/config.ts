@@ -26,7 +26,7 @@ export interface AppConfig {
   responseTimeout: number;
   pollCellData: boolean;
   logLevel: string;
-  cloudBrokerUrl: string;
+  cloudBrokerUrl?: string;  // Optional: auto-discovered from hame-relay certs if not set
   useCloudBridge: boolean;
   cloudCredentials?: HameCredentials;
   healthPort: number;

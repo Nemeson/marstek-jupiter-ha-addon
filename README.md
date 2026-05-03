@@ -14,7 +14,7 @@ Basiert auf Reverse-Engineering der Hame/Marstek Cloud-MQTT-Protokolle.
 - **Echtzeit-Monitoring** — SOC, PV-Leistung, Batteriestatus, Netzdaten, Zell-Level
 - **Steuerung** — Lademodus, Entladetiefe (DOD), Überschusseinspeisung, Zeitpläne
 - **Topic-Verschlüsselung** — AES-128-CBC für `marstek_energy` Broker-Topics (hame-2025)
-- **Cloud-Bridge** — optionale direkte Anbindung an Hame Cloud MQTT
+- **Cloud-Bridge** — optionale direkte Anbindung an Hame Cloud MQTT (Broker-URL wird automatisch aus hame-relay Zertifikaten ermittelt)
 - **Health Endpoint** — HTTP `/health` auf Port 8099 für Home Assistant Watchdog
 
 ---
@@ -65,7 +65,6 @@ topic_prefix: marstek_jupiter
 device_type: JPLS-8H
 device_id: "DEINE_DEVICE_ID"
 broker_id: hame-2025
-cloud_broker_url: "mqtts://<DISCOVER_BROKER>:8883"
 cloud_username: "deine-email@example.com"
 cloud_password: "DEIN_PASSWORT"
 polling_interval: 60
@@ -76,12 +75,12 @@ use_cloud_bridge: true
 health_port: 8099
 ```
 
-**Hinweis: Cloud Broker URL ermitteln**
-Die Hame Cloud MQTT Broker URL ist nicht öffentlich dokumentiert und variiert je nach Region/Gerätegeneration (hame-2024 vs hame-2025). Um die korrekte URL zu erhalten:
-1. Installiere das offizielle [tomquist/hame-relay](https://github.com/tomquist/hame-relay) Add-on in Home Assistant
-2. Starte es mit deinen Hame Cloud Zugangsdaten
-3. Prüfe die Logs — dort wird die tatsächliche Broker URL angezeigt (z. B. `mqtts://...:8883`)
-4. Trage diese URL in `cloud_broker_url` ein
+**Hinweis: Cloud Broker URL (Auto-Discovery)**
+Die Hame Cloud MQTT Broker URL wird automatisch aus den offiziellen `hame-relay` Zertifikaten ermittelt, die zur Build-Zeit in das Docker Image kopiert werden. Das Add-on liest die URL zur Laufzeit aus `/app/certs/${BROKER_ID}-url` (z. B. `/app/certs/hame-2025-url`).
+
+- Wenn `cloud_broker_url` leer gelassen wird, wird die URL automatisch ermittelt
+- Alternativ kann die URL manuell in `cloud_broker_url` gesetzt werden (überschreibt Auto-Discovery)
+- Falls Auto-Discovery fehlschlägt, prüfe die Logs auf Fehlermeldungen bezüglich fehlender Zertifikatsdateien
 
 ### Optionen
 
@@ -94,7 +93,7 @@ Die Hame Cloud MQTT Broker URL ist nicht öffentlich dokumentiert und variiert j
 | `device_type` | Gerätetyp: `JPLS_8H`, `HMM-1`, `HMN-1` | `HMM-1` |
 | `device_id` | Geräte-ID (12-stellige MAC/Hex) | — |
 | `broker_id` | Broker-Generation: `hame-2024` oder `hame-2025` | `hame-2025` |
-| `cloud_broker_url` | Cloud MQTT Broker URL (nur bei `use_cloud_bridge: true`) | — |
+| `cloud_broker_url` | Cloud MQTT Broker URL (optional — wird aus hame-relay Zertifikaten ermittelt, falls leer) | — |
 | `polling_interval` | Abfrageintervall (Sekunden, 10–3600) | `60` |
 | `response_timeout` | MQTT-Antwort-Timeout (Sekunden, 5–300) | `30` |
 | `enable_cell_data` | Zell-Level Sensoren aktivieren | `true` |
@@ -197,6 +196,7 @@ Die Hame Cloud MQTT Broker URL ist nicht öffentlich dokumentiert und variiert j
 | Keine Entities in HA | Prüfe, ob MQTT-Integration in HA aktiviert ist. Add-on Logs auf Fehler prüfen. |
 | Cloud-Bridge Login fehlgeschlagen | `use_cloud_bridge: false` setzen und nur lokalen Mosquitto nutzen. |
 | Verbindung zum Broker bricht ab | `broker_id` auf `hame-2024` umstellen (ältere Firmware). |
+| Cloud Broker URL nicht gefunden (Auto-Discovery) | Prüfe Logs auf "Cannot find cert file" — Zertifikat für `broker_id` fehlt im Image. Neue Version des Add-ons installieren (Docker Build muss hame-relay Zertifikate kopieren). |
 | Health-Check fehlt | Stelle sicher, dass Port `8099` nicht blockiert ist. Watchdog-URL: `http://[HOST]:8099/health` |
 
 ---

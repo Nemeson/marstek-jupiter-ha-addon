@@ -45,7 +45,7 @@ async function main() {
 
   // Optional: Cloud-MQTT Bridge
   let cloudBridge: CloudBridge | undefined;
-  if (config.useCloudBridge && config.cloudCredentials) {
+  if (config.useCloudBridge && config.cloudCredentials && config.cloudBrokerUrl) {
     cloudBridge = new CloudBridge({
       deviceType: config.deviceType,
       deviceId: config.deviceId,
@@ -60,6 +60,8 @@ async function main() {
       logger.warn('Cloud bridge failed to start — continuing without cloud bridge');
       cloudBridge = undefined;
     }
+  } else if (config.useCloudBridge && !config.cloudBrokerUrl) {
+    logger.warn('Cloud bridge requested but cloudBrokerUrl is not configured. Set it explicitly or rely on hame-relay auto-discovery.');
   }
 
   let client: MqttClient;
