@@ -39,16 +39,17 @@ mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
-device_type: JPLS_8H
-device_id: "YOUR_MAC_ADDRESS_HEX"
+device_type: JPLS-8H
+device_id: "YOUR_DEVICE_ID"
 broker_id: hame-2025
+cloud_broker_url: ""
+cloud_username: ""
+cloud_password: ""
 polling_interval: 60
 response_timeout: 30
 enable_cell_data: true
 log_level: info
 use_cloud_bridge: false
-cloud_username: ""
-cloud_password: ""
 health_port: 8099
 ```
 

@@ -61,7 +61,13 @@ export class CloudBridge {
       return false;
     }
 
-    this.logger.info({ deviceId: device.devid, product: device.name }, 'Cloud device verified');
+    // Validate cloud broker URL
+    if (!this.cloudBrokerUrl) {
+      this.logger.error(
+        'Cloud bridge failed: cloudBrokerUrl is not configured. Set it in the add-on options or via CLOUD_BROKER_URL env var.'
+      );
+      return false;
+    }
 
     // Build topics
     const { oldTopic, newTopic } = buildDeviceTopic(this.brokerId, this.deviceType, this.deviceId);
