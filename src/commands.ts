@@ -45,7 +45,7 @@ export const Commands = {
     power?: number,
     weekdays?: number   // bitmask
   ) => {
-    const params: CommandParams = {};
+    const params: CommandParams = { ix: index };
     if (startTime) {
       const [h, m] = startTime.split(':').map(Number);
       params.th = h;
