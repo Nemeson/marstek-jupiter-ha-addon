@@ -1,18 +1,29 @@
+# Multi-stage build for minimal production image
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Production stage
 FROM node:20-alpine
 
-# Install bashio for Home Assistant add-on helpers
+# Install runtime dependencies
 RUN apk add --no-cache bash jq curl
 
 WORKDIR /app
 
-# Install dependencies
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+# Copy node_modules from builder
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built application
 COPY dist/ ./dist/
 COPY run.sh ./
 RUN chmod +x run.sh
+
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

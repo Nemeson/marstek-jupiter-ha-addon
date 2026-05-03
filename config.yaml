@@ -6,7 +6,7 @@ arch:
   - armv7
   - aarch64
   - amd64
-url: "https://github.com/your-username/marstek-jupiter-ha"
+url: "https://github.com/Nemeson/marstek-jupiter-ha-addon"
 apptitle: "Marstek Jupiter C+ Integration"
 init: false
 startup: application
@@ -50,4 +50,4 @@ schema:
   health_port: port
 map:
   - addon_config:rw
-image: "ghcr.io/your-username/marstek-jupiter-ha-{arch}"
+image: "ghcr.io/nemeson/marstek-jupiter-ha-addon-{arch}"
