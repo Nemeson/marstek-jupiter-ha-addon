@@ -21,7 +21,7 @@ options:
   mqtt_username: ""
   mqtt_password: ""
   topic_prefix: "marstek_jupiter"
-  device_type: "HMM-1"
+  device_type: "JPLS_8H"
   device_id: "YOUR_MAC_ADDRESS_HEX"
   broker_id: "hame-2025"
   cloud_broker_url: "mqtt://mqtt.hamedata.com:1883"
@@ -38,7 +38,7 @@ schema:
   mqtt_username: str?
   mqtt_password: str?
   topic_prefix: str
-  device_type: list(HMM-1|HMN-1|JPLS-1)
+  device_type: list(JPLS_8H|HMM-1|HMN-1)
   device_id: str
   broker_id: list(hame-2024|hame-2025)
   cloud_broker_url: str

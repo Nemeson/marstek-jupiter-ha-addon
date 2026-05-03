@@ -61,7 +61,7 @@ export class CloudBridge {
       return false;
     }
 
-    this.logger.info({ deviceId: device.deviceId, product: device.productName }, 'Cloud device verified');
+    this.logger.info({ deviceId: device.devid, product: device.name }, 'Cloud device verified');
 
     // Build topics
     const { oldTopic, newTopic } = buildDeviceTopic(this.brokerId, this.deviceType, this.deviceId);

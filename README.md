@@ -3,7 +3,7 @@
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue?style=flat-square&logo=home-assistant)](https://www.home-assistant.io/addons/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-Maßgeschneiderte Home Assistant Integration für den **Marstek Jupiter C+** Energiespeicher (HMM-1 / HMN-1 / JPLS-1).  
+Maßgeschneiderte Home Assistant Integration für den **Marstek Jupiter C+** Energiespeicher (HMM-1 / HMN-1 / JPLS_8H).  
 Basiert auf Reverse-Engineering der Hame/Marstek Cloud-MQTT-Protokolle.
 
 ---
@@ -39,7 +39,7 @@ mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
-device_type: HMM-1
+device_type: JPLS_8H
 device_id: "YOUR_MAC_ADDRESS_HEX"
 broker_id: hame-2025
 polling_interval: 60
@@ -59,7 +59,7 @@ mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
-device_type: HMM-1
+device_type: JPLS_8H
 device_id: "YOUR_MAC_ADDRESS_HEX"
 broker_id: hame-2025
 polling_interval: 60
@@ -80,7 +80,7 @@ health_port: 8099
 | `mqtt_username` | MQTT Username (optional) | — |
 | `mqtt_password` | MQTT Password (optional) | — |
 | `topic_prefix` | Präfix für HA-Discovery-Topics | `marstek_jupiter` |
-| `device_type` | Gerätetyp: `HMM-1`, `HMN-1`, `JPLS-1` | `HMM-1` |
+| `device_type` | Gerätetyp: `JPLS_8H`, `HMM-1`, `HMN-1` | `HMM-1` |
 | `device_id` | Geräte-ID (12-stellige MAC/Hex) | — |
 | `broker_id` | Broker-Generation: `hame-2024` oder `hame-2025` | `hame-2025` |
 | `polling_interval` | Abfrageintervall (Sekunden, 10–3600) | `60` |
@@ -106,17 +106,50 @@ health_port: 8099
 | `sensor.pv1_power` … `pv4_power` | PV-String-Leistung | W |
 | `sensor.daily_charging` | Tages-Ladung | kWh |
 | `sensor.daily_discharging` | Tages-Entladung | kWh |
-| `sensor.wifi_signal` | WLAN-Signalstärke | dBm |
-| `sensor.depth_of_discharge` | Entladetiefe | % |
+| `sensor.monthly_charging` | Monats-Ladung | kWh |
+| `sensor.monthly_discharging` | Monats-Entladung | kWh |
+| `sensor.yearly_charging` | Jahres-Ladung | kWh |
+| `sensor.yearly_discharging` | Jahres-Entladung | kWh |
 | `sensor.grid_import` / `grid_export` | Netzbezug / -einspeisung | W |
+| `sensor.wifi_signal` | WLAN-Signalstärke | dBm |
+| `sensor.wifi_name` | WLAN-Name (SSID) | — |
+| `sensor.depth_of_discharge` | Entladetiefe (DOD) | % |
+| `sensor.inverter_temp` | Wechselrichter-Temperatur | °C |
+| `sensor.battery_temp` | Batterie-Temperatur | °C |
+| `sensor.battery_status` | Batterie-Status | — |
+| `sensor.working_status` | Betriebsstatus | — |
+| `sensor.ct_status` | CT-Status | — |
+| `sensor.ct_type` | CT-Typ | — |
+| `sensor.phase_type` | Phasentyp | — |
+| `sensor.recharge_mode` | Nachlademodus | — |
+| `sensor.error_code` | Fehlercode | — |
+| `sensor.alarm_code` | Alarmcode | — |
+| `sensor.auto_switch_working_mode` | Auto-Modus-Umschaltung | — |
+| `sensor.http_server_type` | HTTP-Server-Typ | — |
+| `sensor.bms_version` | BMS Firmware-Version | — |
+| `sensor.mppt_version` | MPPT Firmware-Version | — |
+| `sensor.inverter_version` | Wechselrichter Firmware-Version | — |
+| `sensor.ems_version` | EMS Firmware-Version | — |
+| `sensor.device_version` | Geräte Firmware-Version | — |
+| `sensor.cell_*` | Zell-Level Spannungen (optional) | V |
 
-### Schalter & Eingaben (auto-discovered)
+### Schalter, Eingaben & Buttons (auto-discovered)
 
 | Entity | Typ | Beschreibung |
 |--------|-----|-------------|
 | `switch.surplus_feed_in` | Switch | Überschusseinspeisung an/aus |
 | `select.working_mode` | Select | `automatic` oder `manual` |
 | `number.depth_of_discharge` | Number | Entladetiefe 30–88 % (Schritt 1) |
+| `button.refresh` | Button | Gerätedaten manuell abfragen |
+| `button.factory_reset` | Button | Werksreset auslösen (⚠️ Vorsicht) |
+| `button.sync_time` | Button | Geräte-Uhrzeit synchronisieren |
+| `number.time_period_{0..4}_start_hour` | Number | Zeitfenster Start-Stunde (0–23) |
+| `number.time_period_{0..4}_start_minute` | Number | Zeitfenster Start-Minute (0–59) |
+| `number.time_period_{0..4}_end_hour` | Number | Zeitfenster End-Stunde (0–23) |
+| `number.time_period_{0..4}_end_minute` | Number | Zeitfenster End-Minute (0–59) |
+| `number.time_period_{0..4}_power` | Number | Zeitfenster Leistung in W (0–10000) |
+| `switch.time_period_{0..4}_enabled` | Switch | Zeitfenster aktiv/inaktiv |
+| `text.time_period_{0..4}_weekday` | Text | Zeitfenster Wochentage als Bitmaske (0–127) |
 
 ---
 
