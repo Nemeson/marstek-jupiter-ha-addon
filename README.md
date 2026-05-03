@@ -3,19 +3,19 @@
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue?style=flat-square&logo=home-assistant)](https://www.home-assistant.io/addons/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-Maßgeschneiderte Home Assistant Integration für den **Marstek Jupiter C+** Energiespeicher (HMM-1 / HMN-1 / JPLS_8H).  
+Home Assistant Add-on für den **Marstek Jupiter C+** Energiespeicher und kompatible Hame-Geräte.
 Basiert auf Reverse-Engineering der Hame/Marstek Cloud-MQTT-Protokolle.
 
 ---
 
 ## Features
 
-- **MQTT Auto-Discovery** — alle Sensoren & Schalter erscheinen automatisch in HA
+- **MQTT Auto-Discovery** — Sensoren, Schalter und Eingaben erscheinen automatisch in Home Assistant
 - **Echtzeit-Monitoring** — SOC, PV-Leistung, Batteriestatus, Netzdaten, Zell-Level
 - **Steuerung** — Lademodus, Entladetiefe (DOD), Überschusseinspeisung, Zeitpläne
 - **Topic-Verschlüsselung** — AES-128-CBC für `marstek_energy` Broker-Topics (hame-2025)
-- **Cloud-Bridge** — optionale direkte Anbindung an Hame Cloud MQTT (Broker-URL wird automatisch aus hame-relay Zertifikaten ermittelt)
-- **Health Endpoint** — HTTP `/health` auf Port 8099 für Home Assistant Watchdog
+- **Cloud-Bridge** — optionale direkte Anbindung an Hame Cloud MQTT (Broker-URL wird automatisch ermittelt)
+- **Health Endpoint** — HTTP `/health` für Home Assistant Watchdog
 
 ---
 
@@ -39,8 +39,8 @@ mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
-device_type: JPLS-8H
-device_id: "YOUR_DEVICE_ID"
+device_type: HMM-1
+device_id: "DEINE_DEVICE_ID"
 broker_id: hame-2025
 cloud_broker_url: ""
 cloud_username: ""
@@ -55,18 +55,16 @@ health_port: 8099
 
 ### Mit Cloud-Bridge (Hame Cloud)
 
-> **Wichtig:** Dein Hame Cloud Passwort muss rotiert werden, falls es bereits in einer früheren Version dieser README gestanden hat.
-
 ```yaml
 mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
-device_type: JPLS-8H
+device_type: HMM-1
 device_id: "DEINE_DEVICE_ID"
 broker_id: hame-2025
-cloud_username: "deine-email@example.com"
-cloud_password: "DEIN_PASSWORT"
+cloud_username: "cloud-email@example.com"
+cloud_password: "CLOUD_PASSWORT"
 polling_interval: 60
 response_timeout: 30
 enable_cell_data: true
@@ -76,7 +74,7 @@ health_port: 8099
 ```
 
 **Hinweis: Cloud Broker URL (Auto-Discovery)**
-Die Hame Cloud MQTT Broker URL wird automatisch aus den offiziellen `hame-relay` Zertifikaten ermittelt, die zur Build-Zeit in das Docker Image kopiert werden. Das Add-on liest die URL zur Laufzeit aus `/app/certs/${BROKER_ID}-url` (z. B. `/app/certs/hame-2025-url`).
+Die Hame Cloud MQTT Broker URL wird automatisch aus den offiziellen `hame-relay` Zertifikaten ermittelt, die zur Build-Zeit in das Docker Image kopiert werden. Das Add-on liest die URL zur Laufzeit aus `/app/certs/${BROKER_ID}-url`.
 
 - Wenn `cloud_broker_url` leer gelassen wird, wird die URL automatisch ermittelt
 - Alternativ kann die URL manuell in `cloud_broker_url` gesetzt werden (überschreibt Auto-Discovery)
@@ -90,10 +88,10 @@ Die Hame Cloud MQTT Broker URL wird automatisch aus den offiziellen `hame-relay`
 | `mqtt_username` | MQTT Username (optional) | — |
 | `mqtt_password` | MQTT Password (optional) | — |
 | `topic_prefix` | Präfix für HA-Discovery-Topics | `marstek_jupiter` |
-| `device_type` | Gerätetyp: `JPLS_8H`, `HMM-1`, `HMN-1` | `HMM-1` |
+| `device_type` | Gerätetyp: `JPLS-8H`, `HMM-1`, `HMN-1` | `HMM-1` |
 | `device_id` | Geräte-ID (12-stellige MAC/Hex) | — |
 | `broker_id` | Broker-Generation: `hame-2024` oder `hame-2025` | `hame-2025` |
-| `cloud_broker_url` | Cloud MQTT Broker URL (optional — wird aus hame-relay Zertifikaten ermittelt, falls leer) | — |
+| `cloud_broker_url` | Cloud MQTT Broker URL (optional — wird aus hame-relay Zertifikaten ermittelt) | — |
 | `polling_interval` | Abfrageintervall (Sekunden, 10–3600) | `60` |
 | `response_timeout` | MQTT-Antwort-Timeout (Sekunden, 5–300) | `30` |
 | `enable_cell_data` | Zell-Level Sensoren aktivieren | `true` |
@@ -203,7 +201,7 @@ Die Hame Cloud MQTT Broker URL wird automatisch aus den offiziellen `hame-relay`
 
 ## Danksagung
 
-Basierend auf der hervorragenden Arbeit von [tomquist/hm2mqtt](https://github.com/tomquist/hm2mqtt) und [tomquist/hame-relay](https://github.com/tomquist/hame-relay).
+Basierend auf der Arbeit von [tomquist/hm2mqtt](https://github.com/tomquist/hm2mqtt) und [tomquist/hame-relay](https://github.com/tomquist/hame-relay).
 
 ---
 
