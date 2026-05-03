@@ -54,21 +54,23 @@ health_port: 8099
 
 ### Mit Cloud-Bridge (Hame Cloud)
 
+> **Wichtig:** Dein Hame Cloud Passwort muss rotiert werden, falls es bereits in einer früheren Version dieser README gestanden hat.
+
 ```yaml
 mqtt_broker_url: mqtt://core-mosquitto:1883
 mqtt_username: ""
 mqtt_password: ""
 topic_prefix: marstek_jupiter
 device_type: JPLS_8H
-device_id: "YOUR_MAC_ADDRESS_HEX"
+device_id: "DEINE_DEVICE_ID"
 broker_id: hame-2025
 polling_interval: 60
 response_timeout: 30
 enable_cell_data: true
 log_level: info
 use_cloud_bridge: true
-cloud_username: "YOUR_EMAIL"
-cloud_password: "jh7jwx8W7&XLAI2VA^"
+cloud_username: "deine-email@example.com"
+cloud_password: "DEIN_PASSWORT"
 health_port: 8099
 ```
 

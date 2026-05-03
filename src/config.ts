@@ -74,7 +74,7 @@ export function loadConfig(): AppConfig {
     responseTimeout: getEnvNumber('MQTT_RESPONSE_TIMEOUT', 30),
     pollCellData: getEnvBool('POLL_CELL_DATA', false),
     logLevel: getEnv('LOG_LEVEL', 'info'),
-    cloudBrokerUrl: getEnv('CLOUD_BROKER_URL', 'mqtt://mqtt.hamedata.com:1883'),
+    cloudBrokerUrl: getEnv('CLOUD_BROKER_URL', 'mqtts://mqtt.hamedata.com:8883'),
     useCloudBridge,
     cloudCredentials,
     healthPort: getEnvNumber('HEALTH_PORT', 8099),
