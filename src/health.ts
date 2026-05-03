@@ -5,7 +5,15 @@
 import http from 'http';
 import { Logger } from 'pino';
 
-export function createHealthServer(port: number, logger: Logger, isHealthy: () => boolean) {
+export interface HealthServer {
+  server: http.Server;
+  isHealthy: () => boolean;
+  close: () => void;
+}
+
+export function createHealthServer(port: number, logger: Logger, initialHealthCheck: () => boolean): HealthServer {
+  let isHealthy = initialHealthCheck;
+
   const server = http.createServer((req, res) => {
     if (req.url === '/health') {
       const healthy = isHealthy();
@@ -25,5 +33,10 @@ export function createHealthServer(port: number, logger: Logger, isHealthy: () =
     logger.info({ port }, 'Health endpoint listening');
   });
 
-  return server;
+  return {
+    server,
+    get isHealthy() { return isHealthy; },
+    set isHealthy(fn: () => boolean) { isHealthy = fn; },
+    close: () => server.close(),
+  };
 }

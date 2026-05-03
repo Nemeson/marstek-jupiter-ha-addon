@@ -79,6 +79,9 @@ async function main() {
     process.exit(1);
   }
 
+  // Update health check to use actual client connection state
+  healthServer.isHealthy = () => client.getConnected();
+
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutting down...');
