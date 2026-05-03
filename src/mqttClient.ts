@@ -34,6 +34,12 @@ interface DeviceState {
   inverterTemp?: number;
   batteryTemp?: number;
   batteryStatus?: string;
+  timePeriodStartHour?: number;
+  timePeriodStartMinute?: number;
+  timePeriodEndHour?: number;
+  timePeriodEndMinute?: number;
+  timePeriodPower?: number;
+  timePeriodEnabled?: boolean;
   online: boolean;
   lastSeen?: number;
   cellData?: Record<string, number>;
@@ -91,6 +97,13 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
     state.inverterTemp = getNumber(payload, 'inv_t', state.inverterTemp);
     state.batteryTemp = getNumber(payload, 'bat_t', state.batteryTemp);
     state.batteryStatus = getString(payload, 'bat_s', state.batteryStatus);
+    // Time-period state extraction
+    state.timePeriodStartHour = getNumber(payload, 'th', state.timePeriodStartHour);
+    state.timePeriodStartMinute = getNumber(payload, 'tm', state.timePeriodStartMinute);
+    state.timePeriodEndHour = getNumber(payload, 'eh', state.timePeriodEndHour);
+    state.timePeriodEndMinute = getNumber(payload, 'em', state.timePeriodEndMinute);
+    state.timePeriodPower = getNumber(payload, 'vv', state.timePeriodPower);
+    state.timePeriodEnabled = getBoolean(payload, 'as', state.timePeriodEnabled);
     state.online = true;
     state.lastSeen = Date.now();
 
@@ -133,6 +146,13 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
     if (state.inverterTemp !== undefined) await publishSensor('inverterTemp', state.inverterTemp, '°C', 'temperature');
     if (state.batteryTemp !== undefined) await publishSensor('batteryTemp', state.batteryTemp, '°C', 'temperature');
     if (state.batteryStatus) await publishSensor('batteryStatus', state.batteryStatus);
+    // Time-period sensors
+    if (state.timePeriodStartHour !== undefined) await publishSensor('timePeriodStartHour', state.timePeriodStartHour, 'h');
+    if (state.timePeriodStartMinute !== undefined) await publishSensor('timePeriodStartMinute', state.timePeriodStartMinute, 'min');
+    if (state.timePeriodEndHour !== undefined) await publishSensor('timePeriodEndHour', state.timePeriodEndHour, 'h');
+    if (state.timePeriodEndMinute !== undefined) await publishSensor('timePeriodEndMinute', state.timePeriodEndMinute, 'min');
+    if (state.timePeriodPower !== undefined) await publishSensor('timePeriodPower', state.timePeriodPower, 'W', 'power');
+    if (state.timePeriodEnabled !== undefined) await publishSensor('timePeriodEnabled', state.timePeriodEnabled);
 
     // Publish cell-level data
     if (state.cellData) {
@@ -194,6 +214,24 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
     if (pollCellData) {
       await sendCommandWithRetry(Commands.getBmsInfo());
     }
+  }
+
+  async function sendTimePeriodCommand() {
+    const startTime = state.timePeriodStartHour !== undefined && state.timePeriodStartMinute !== undefined
+      ? `${state.timePeriodStartHour}:${state.timePeriodStartMinute.toString().padStart(2, '0')}`
+      : undefined;
+    const endTime = state.timePeriodEndHour !== undefined && state.timePeriodEndMinute !== undefined
+      ? `${state.timePeriodEndHour}:${state.timePeriodEndMinute.toString().padStart(2, '0')}`
+      : undefined;
+    const cmd = Commands.setTimePeriod(
+      1,
+      startTime,
+      endTime,
+      state.timePeriodEnabled,
+      state.timePeriodPower
+    );
+    logger.debug({ cmd, state: { startTime, endTime, enabled: state.timePeriodEnabled, power: state.timePeriodPower } }, 'Sending time-period command');
+    await sendCommandWithRetry(cmd);
   }
 
   async function publishDiscovery() {
@@ -304,6 +342,68 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
       logger.error({ err }, 'Failed to publish number discovery');
     }
 
+    // Time-Period Number Entities
+    const timePeriodNumbers = [
+      { name: 'Time Period Start Hour', objectId: 'time_period_start_hour', topic: 'timePeriodStartHour', min: 0, max: 23, unit: 'h' },
+      { name: 'Time Period Start Minute', objectId: 'time_period_start_minute', topic: 'timePeriodStartMinute', min: 0, max: 59, unit: 'min' },
+      { name: 'Time Period End Hour', objectId: 'time_period_end_hour', topic: 'timePeriodEndHour', min: 0, max: 23, unit: 'h' },
+      { name: 'Time Period End Minute', objectId: 'time_period_end_minute', topic: 'timePeriodEndMinute', min: 0, max: 59, unit: 'min' },
+      { name: 'Time Period Power', objectId: 'time_period_power', topic: 'timePeriodPower', min: 0, max: 10000, unit: 'W' },
+    ];
+
+    for (const tp of timePeriodNumbers) {
+      const tpTopic = `homeassistant/number/${deviceType}_${deviceId}/${tp.objectId}/config`;
+      try {
+        await client.publishAsync(tpTopic, JSON.stringify({
+          name: tp.name,
+          state_topic: `${baseTopic}/${tp.topic}`,
+          command_topic: `${controlTopic}/${tp.objectId}`,
+          availability_topic: availabilityTopic,
+          unique_id: `${deviceType}_${deviceId}_${tp.objectId}`,
+          device: deviceInfo,
+          min: tp.min,
+          max: tp.max,
+          step: 1,
+          unit_of_measurement: tp.unit,
+          value_template: `{{ value_json.value }}`,
+        }), { retain: true });
+      } catch (err) {
+        logger.error({ err, objectId: tp.objectId }, 'Failed to publish time-period number discovery');
+      }
+    }
+
+    // Time-Period Enabled Select
+    const tpSelectTopic = `homeassistant/select/${deviceType}_${deviceId}/time_period_enabled/config`;
+    try {
+      await client.publishAsync(tpSelectTopic, JSON.stringify({
+        name: 'Time Period Enabled',
+        state_topic: `${baseTopic}/timePeriodEnabled`,
+        command_topic: `${controlTopic}/time-period-enabled`,
+        availability_topic: availabilityTopic,
+        unique_id: `${deviceType}_${deviceId}_time_period_enabled`,
+        device: deviceInfo,
+        options: ['on', 'off'],
+        value_template: `{{ 'on' if value_json.value else 'off' }}`,
+      }), { retain: true });
+    } catch (err) {
+      logger.error({ err }, 'Failed to publish time-period select discovery');
+    }
+
+    // Consolidated Time-Period command topic (JSON)
+    const tpJsonTopic = `homeassistant/sensor/${deviceType}_${deviceId}/time_period_state/config`;
+    try {
+      await client.publishAsync(tpJsonTopic, JSON.stringify({
+        name: 'Time Period State',
+        state_topic: `${baseTopic}/timePeriodState`,
+        availability_topic: availabilityTopic,
+        unique_id: `${deviceType}_${deviceId}_time_period_state`,
+        device: deviceInfo,
+        value_template: `{{ value_json.value }}`,
+      }), { retain: true });
+    } catch (err) {
+      logger.error({ err }, 'Failed to publish time-period state discovery');
+    }
+
     discoveryPublished = true;
     logger.info('HA Discovery published for all entities');
   }
@@ -376,6 +476,46 @@ export function createMqttClient(config: AppConfig, logger: Logger): MqttClient 
               const depth = parseInt(msg, 10);
               if (!isNaN(depth)) {
                 await sendCommandWithRetry(Commands.setDischargeDepth(depth));
+              }
+            } else if (command === 'time-period-enabled') {
+              const enabled = msg === 'on';
+              state.timePeriodEnabled = enabled;
+              await publishSensor('timePeriodEnabled', enabled);
+              await sendTimePeriodCommand();
+            } else if (command === 'time_period_start_hour') {
+              const h = parseInt(msg, 10);
+              if (!isNaN(h)) {
+                state.timePeriodStartHour = h;
+                await publishSensor('timePeriodStartHour', h, 'h');
+                await sendTimePeriodCommand();
+              }
+            } else if (command === 'time_period_start_minute') {
+              const m = parseInt(msg, 10);
+              if (!isNaN(m)) {
+                state.timePeriodStartMinute = m;
+                await publishSensor('timePeriodStartMinute', m, 'min');
+                await sendTimePeriodCommand();
+              }
+            } else if (command === 'time_period_end_hour') {
+              const h = parseInt(msg, 10);
+              if (!isNaN(h)) {
+                state.timePeriodEndHour = h;
+                await publishSensor('timePeriodEndHour', h, 'h');
+                await sendTimePeriodCommand();
+              }
+            } else if (command === 'time_period_end_minute') {
+              const m = parseInt(msg, 10);
+              if (!isNaN(m)) {
+                state.timePeriodEndMinute = m;
+                await publishSensor('timePeriodEndMinute', m, 'min');
+                await sendTimePeriodCommand();
+              }
+            } else if (command === 'time_period_power') {
+              const p = parseInt(msg, 10);
+              if (!isNaN(p)) {
+                state.timePeriodPower = p;
+                await publishSensor('timePeriodPower', p, 'W', 'power');
+                await sendTimePeriodCommand();
               }
             }
           }

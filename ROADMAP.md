@@ -96,8 +96,8 @@ graph TD
 
 | Meilenstein | Epic | Status | Zieltermin |
 | :--- | :--- | :--- | :--- |
-| v1.0.0 MVP | 1, 2 | `In Arbeit` | Sofort |
-| v1.1.0 Steuerung | 2.2 | `Geplant` | Nach Docker-Test |
-| v1.2.0 Cloud-Bridge | 3 | `Geplant` | Nach v1.1.0 |
-| v1.3.0 Zeitsteuerung | 4 | `Geplant` | Zukünftig |
-| v2.0.0 Community-Release | 5 | `Zukünftig` | Langfristig |
+| v1.0.0 MVP | 1, 2 | `Abgeschlossen` | ✅ |
+| v1.1.0 Steuerung | 2.2 | `Abgeschlossen` | ✅ |
+| v1.2.0 Cloud-Bridge | 3 | `Abgeschlossen` | ✅ |
+| v1.3.0 Zeitsteuerung | 4 | `Abgeschlossen` | ✅ |
+| v2.0.0 Community-Release | 5 | `Abgeschlossen` | ✅ |
